@@ -25,11 +25,11 @@
     background: transparent;
   }
   ::-webkit-scrollbar-thumb {
-    background: #1e1e2a;
+    background: #3d3d55;
     border-radius: 3px;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: #2a2a3a;
+    background: #55557a;
   }
 
   /* Reduced motion */

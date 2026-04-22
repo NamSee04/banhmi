@@ -80,3 +80,7 @@ export interface ChatSourceAlert {
   time: string
   description: string
 }
+
+export type HistoryEntry =
+  | { kind: 'search'; id: string; query: string; date: string; ts: number; resultCount: number }
+  | { kind: 'select'; id: string; nodeId: string; description: string; host: string; date: string; ts: number }

@@ -1,0 +1,28 @@
+pre-commit:
+  parallel: false
+  commands:
+    ts-typecheck:
+      glob: "dashboard/frontend/src/**/*.{ts,tsx}"
+      root: "dashboard/frontend"
+      run: npm run typecheck
+
+    ts-lint:
+      glob: "dashboard/frontend/src/**/*.{ts,tsx}"
+      root: "dashboard/frontend"
+      run: npm run lint -- --max-warnings=0 {staged_files}
+
+    go-fmt:
+      glob: "dashboard/backend/**/*.go"
+      run: |
+        files=$(gofmt -l {staged_files})
+        if [ -n "$files" ]; then
+          echo "gofmt needed:"
+          echo "$files"
+          echo "Fix: gofmt -w <file>"
+          exit 1
+        fi
+
+    go-vet:
+      glob: "dashboard/backend/**/*.go"
+      root: "dashboard/backend"
+      run: go vet ./...

@@ -1,4 +1,4 @@
-import type { GraphNode, SearchResult } from '../types'
+import type { Alert, GraphNode, SearchResult } from '../types'
 import { CLUSTER_COLORS } from '../colors'
 import { X } from 'lucide-react'
 import Badge from './ui/Badge'
@@ -6,21 +6,22 @@ import Skeleton from './ui/Skeleton'
 import IconButton from './ui/IconButton'
 
 interface Props {
-  node: GraphNode
+  alert: Alert
+  graphNode?: GraphNode | null
   similar: SearchResult[]
   loading: boolean
   onClose: () => void
   onSelectId: (id: string) => void
 }
 
-export default function AlertDetail({ node, similar, loading, onClose, onSelectId }: Props) {
+export default function AlertDetail({ alert, graphNode, similar, loading, onClose, onSelectId }: Props) {
   return (
-    <div className="flex h-full flex-col overflow-hidden rounded-xl glass animate-slide-in">
+    <div className="flex flex-col overflow-hidden rounded-xl glass animate-slide-in shadow-2xl max-h-[70vh]">
       {/* Header */}
-      <div className="flex items-start justify-between gap-2 p-3 border-b border-border-subtle">
+      <div className="flex items-start justify-between gap-2 p-3 border-b border-border-subtle shrink-0">
         <div className="flex flex-wrap gap-1.5">
-          <Badge variant="severity" value={node.severity} pulse={node.severity === 'critical'} />
-          <Badge variant="status" value={node.status} />
+          <Badge variant="severity" value={alert.severity} pulse={alert.severity === 'critical'} />
+          <Badge variant="status" value={alert.status} />
         </div>
         <IconButton size="sm" onClick={onClose}>
           <X size={14} />
@@ -28,27 +29,38 @@ export default function AlertDetail({ node, similar, loading, onClose, onSelectI
       </div>
 
       <div className="flex-1 overflow-y-auto p-3 space-y-3 text-sm">
-        <p className="text-fg-primary font-medium leading-snug">{node.description}</p>
+        <p className="text-fg-primary font-medium leading-snug">{alert.description}</p>
 
         <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs">
-          <Dt>Source</Dt><dd className="text-fg-secondary truncate">{node.source || '—'}</dd>
-          <Dt>Host</Dt><dd className="text-fg-secondary font-mono truncate">{node.host || '—'}</dd>
-          {node.value && <><Dt>Value</Dt><dd className="text-fg-secondary">{node.value}</dd></>}
-          <Dt>Time</Dt><dd className="text-fg-secondary">{node.time || '—'}</dd>
-          <Dt>Cluster</Dt>
-          <dd>
-            <span className="inline-flex items-center gap-1">
-              <span
-                className="h-2 w-2 rounded-full shrink-0"
-                style={{
-                  background: CLUSTER_COLORS[node.clusterId % CLUSTER_COLORS.length],
-                  boxShadow: `0 0 6px ${CLUSTER_COLORS[node.clusterId % CLUSTER_COLORS.length]}`,
-                }}
-              />
-              <span className="text-fg-secondary">{node.clusterName || `Cluster ${node.clusterId}`}</span>
-            </span>
-          </dd>
+          <Dt>Source</Dt><dd className="text-fg-secondary truncate">{alert.source || '—'}</dd>
+          <Dt>Host</Dt><dd className="text-fg-secondary font-mono truncate">{alert.host || '—'}</dd>
+          {alert.value && <><Dt>Value</Dt><dd className="text-fg-secondary">{alert.value}</dd></>}
+          <Dt>Time</Dt><dd className="text-fg-secondary">{alert.time || '—'}</dd>
+          {graphNode && (
+            <>
+              <Dt>Cluster</Dt>
+              <dd>
+                <span className="inline-flex items-center gap-1">
+                  <span
+                    className="h-2 w-2 rounded-full shrink-0"
+                    style={{
+                      background: CLUSTER_COLORS[graphNode.clusterId % CLUSTER_COLORS.length],
+                      boxShadow: `0 0 6px ${CLUSTER_COLORS[graphNode.clusterId % CLUSTER_COLORS.length]}`,
+                    }}
+                  />
+                  <span className="text-fg-secondary">{graphNode.clusterName || `Cluster ${graphNode.clusterId}`}</span>
+                </span>
+              </dd>
+            </>
+          )}
         </dl>
+
+        {alert.details && (
+          <div>
+            <div className="mb-1 text-xs font-semibold uppercase tracking-wider text-fg-muted">Details</div>
+            <p className="text-xs text-fg-secondary leading-relaxed whitespace-pre-wrap">{alert.details}</p>
+          </div>
+        )}
 
         {/* Similar alerts */}
         <div>
@@ -73,9 +85,7 @@ export default function AlertDetail({ node, similar, loading, onClose, onSelectI
                     className="w-full text-left rounded-lg border border-border-subtle bg-bg-surface/50 p-2 hover:border-accent/50 transition-colors animate-slide-in"
                   >
                     <div className="flex items-center justify-between mb-0.5">
-                      <div className="flex gap-1">
-                        <Badge variant="severity" value={r.alert.severity} />
-                      </div>
+                      <Badge variant="severity" value={r.alert.severity} />
                       <span className="text-xs text-accent-soft">{(r.similarity * 100).toFixed(0)}%</span>
                     </div>
                     <p className="text-xs text-fg-secondary line-clamp-2">{r.alert.description}</p>
