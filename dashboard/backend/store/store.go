@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	"hash/fnv"
+	"strings"
 
 	"github.com/namsee/banhmi/dashboard/models"
 	qdrant "github.com/qdrant/go-client/qdrant"
@@ -60,26 +61,43 @@ func (c *Client) ctx(parent context.Context) context.Context {
 // Close closes the underlying gRPC connection
 func (c *Client) Close() { c.conn.Close() }
 
-// EnsureCollection creates the collection if it doesn't exist
+// EnsureCollection creates the collection if it doesn't exist and ensures
+// required payload indexes are present (idempotent).
 func (c *Client) EnsureCollection(parent context.Context) error {
 	ctx := c.ctx(parent)
-	_, err := c.collections.Get(ctx, &qdrant.GetCollectionInfoRequest{CollectionName: CollectionName})
-	if err == nil {
-		return nil // already exists
-	}
-
-	_, err = c.collections.Create(ctx, &qdrant.CreateCollection{
-		CollectionName: CollectionName,
-		VectorsConfig: &qdrant.VectorsConfig{
-			Config: &qdrant.VectorsConfig_Params{
-				Params: &qdrant.VectorParams{
-					Size:     VectorSize,
-					Distance: qdrant.Distance_Cosine,
+	if _, err := c.collections.Get(ctx, &qdrant.GetCollectionInfoRequest{CollectionName: CollectionName}); err != nil {
+		if _, err := c.collections.Create(ctx, &qdrant.CreateCollection{
+			CollectionName: CollectionName,
+			VectorsConfig: &qdrant.VectorsConfig{
+				Config: &qdrant.VectorsConfig_Params{
+					Params: &qdrant.VectorParams{
+						Size:     VectorSize,
+						Distance: qdrant.Distance_Cosine,
+					},
 				},
 			},
-		},
+		}); err != nil {
+			return err
+		}
+	}
+	return c.ensureDateIndex(ctx)
+}
+
+// ensureDateIndex creates a keyword payload index on the "date" field.
+// Qdrant Cloud strict mode rejects filter queries on unindexed fields; local
+// Qdrant does not. Swallow the already-exists error to stay idempotent across
+// restarts.
+func (c *Client) ensureDateIndex(ctx context.Context) error {
+	fieldType := qdrant.FieldType_FieldTypeKeyword
+	_, err := c.points.CreateFieldIndex(ctx, &qdrant.CreateFieldIndexCollection{
+		CollectionName: CollectionName,
+		FieldName:      "date",
+		FieldType:      &fieldType,
 	})
-	return err
+	if err != nil && !strings.Contains(err.Error(), "already exists") {
+		return fmt.Errorf("qdrant create date index: %w", err)
+	}
+	return nil
 }
 
 // alertID hashes an alert ID string to a uint64 for Qdrant point ID
