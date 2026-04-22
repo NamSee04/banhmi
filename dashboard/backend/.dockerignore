@@ -1,0 +1,8 @@
+.env
+.env.*
+dashboard
+test-build
+models/all-MiniLM-L6-v2
+*.a
+.git
+.gitignore

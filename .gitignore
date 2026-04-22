@@ -1,0 +1,39 @@
+alerts/*
+backend/models/*
+
+.claude
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+logs/
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+build/
+docs/plan/*
+docs/skills/
+
+# Backend artifacts
+dashboard/backend/dashboard
+dashboard/backend/test-build
+dashboard/backend/models/
+dashboard/scripts
+.github/prompts
